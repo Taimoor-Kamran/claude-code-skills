@@ -14,6 +14,7 @@ dependencies = [
     "sqlmodel>=0.0.31",
     "asyncpg>=0.31.0",
     "greenlet>=3.3.0",
+    "openai-agents>=0.0.3",
 ]
 
 [project.optional-dependencies]
