@@ -15,6 +15,7 @@ class TodoBase(BaseModel):
     description: str | None = None
     priority: Priority = Priority.MEDIUM
     due_date: datetime | None = None
+    completed: bool = False
 
 
 class TodoCreate(TodoBase):
@@ -31,7 +32,6 @@ class TodoUpdate(BaseModel):
 
 class Todo(TodoBase):
     id: int
-    completed: bool
     created_at: datetime
     updated_at: datetime
 

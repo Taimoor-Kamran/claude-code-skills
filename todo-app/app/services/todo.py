@@ -4,7 +4,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.todo import TodoRepository
-from app.schemas.todo import TodoCreate, TodoUpdate, Todo, TodoList, Priority
+from app.models.todo import Todo as TodoModel, Priority
+from app.schemas.todo import TodoCreate, TodoUpdate, Todo, TodoList
 
 
 class TodoService:
@@ -12,7 +13,13 @@ class TodoService:
         self.repository = TodoRepository(session)
 
     async def create_todo(self, todo_data: TodoCreate) -> Todo:
-        todo = await self.repository.create(todo_data)
+        todo = await self.repository.create(
+            title=todo_data.title,
+            description=todo_data.description,
+            completed=todo_data.completed,
+            priority=todo_data.priority.value if isinstance(todo_data.priority, Priority) else todo_data.priority,
+            due_date=todo_data.due_date
+        )
         return Todo.model_validate(todo)
 
     async def get_todo(self, todo_id: int) -> Todo:
@@ -34,12 +41,13 @@ class TodoService:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
     ) -> TodoList:
+        priority_str = priority.value if priority else None
         todos, total = await self.repository.get_all(
             skip=skip,
             limit=limit,
             search=search,
             completed=completed,
-            priority=priority,
+            priority=priority_str,
             date_from=date_from,
             date_to=date_to,
         )
@@ -49,7 +57,12 @@ class TodoService:
         )
 
     async def update_todo(self, todo_id: int, todo_data: TodoUpdate) -> Todo:
-        todo = await self.repository.update(todo_id, todo_data)
+        update_data = todo_data.model_dump(exclude_unset=True)
+        # Convert priority enum to string if needed
+        if "priority" in update_data and update_data["priority"]:
+            update_data["priority"] = update_data["priority"].value if isinstance(update_data["priority"], Priority) else update_data["priority"]
+
+        todo = await self.repository.update(todo_id, **update_data)
         if not todo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

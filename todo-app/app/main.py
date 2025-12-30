@@ -1,11 +1,12 @@
 """FastAPI application entry point."""
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 
 from app.api.v1 import router as api_v1_router
 from app.core.config import settings
-from app.core.database import init_db
+from app.core.database import init_db, engine
 from app.models import todo  # noqa: F401 - Import to register model
 
 
@@ -13,7 +14,12 @@ from app.models import todo  # noqa: F401 - Import to register model
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     # Startup
-    await init_db()
+    # Check if we're running tests and override database URL if needed
+    if os.getenv("TESTING"):
+        # In testing mode, the database initialization is handled by the test fixtures
+        pass
+    else:
+        await init_db()
     yield
     # Shutdown
 

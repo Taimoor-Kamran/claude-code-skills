@@ -9,6 +9,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="ignore",  # Ignore extra fields in .env
     )
 
     PROJECT_NAME: str = "FastAPI App"
@@ -18,6 +19,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     DATABASE_URL: str = "sqlite+aiosqlite:///./app.db"
+    DATABASE_API_KEY: str = ""  # Optional API key for database
+    OPENAI_API_KEY: str = ""  # Optional OpenAI API key
 
 
 settings = Settings()
