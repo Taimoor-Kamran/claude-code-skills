@@ -1,126 +1,74 @@
-# Tox Configuration Reference
+# UV Commands Reference
 
-## Basic tox.ini
+## Project Setup
 
-```ini
-[tox]
-env_list = py310, py311, py312
-isolated_build = true
+```bash
+# Create virtual environment
+uv venv
 
-[testenv]
-deps = pytest>=8.0
-commands = pytest {posargs}
+# Install project dependencies
+uv pip install -e '.[dev]'
+
+# Install specific Python version
+uv python install 3.12
 ```
 
-## Common Environments
+## Testing Commands
 
-### Testing with Coverage
-```ini
-[testenv:coverage]
-deps =
-    pytest>=8.0
-    pytest-cov>=4.0
-commands =
-    pytest --cov=src --cov-report=term-missing --cov-report=html {posargs}
-```
+| Task | Command |
+|------|---------|
+| Run all tests | `pytest` |
+| Run specific test | `pytest tests/unit/test_example.py` |
+| Run with coverage | `pytest --cov=src --cov-report=html` |
+| Run specific marker | `pytest -m "not slow"` |
+| Run by pattern | `pytest -k "test_name"` |
+| Run in parallel | `pytest -n auto` |
 
-### Linting
-```ini
-[testenv:lint]
-skip_install = true
-deps = ruff>=0.1.0
-commands =
-    ruff check src tests
-    ruff format --check src tests
-```
+## Linting & Formatting
 
-### Type Checking
-```ini
-[testenv:typecheck]
-deps =
-    mypy>=1.0
-    types-requests
-commands = mypy src
-```
+| Task | Command |
+|------|---------|
+| Lint check | `ruff check src tests` |
+| Format code | `ruff format src tests` |
+| Fix lint issues | `ruff check --fix src tests` |
+| Type check | `mypy src` |
 
-### Documentation
-```ini
-[testenv:docs]
-deps =
-    sphinx>=7.0
-    sphinx-rtd-theme
-commands = sphinx-build -b html docs docs/_build
-```
-
-## Tox Commands
+## UV Commands
 
 | Command | Description |
 |---------|-------------|
-| `tox` | Run all environments |
-| `tox -e py312` | Run specific environment |
-| `tox -e py310,py311` | Run multiple environments |
-| `tox -p auto` | Run in parallel |
-| `tox --recreate` | Recreate virtualenvs |
-| `tox -- -k test_name` | Pass args to pytest |
-| `tox -l` | List environments |
+| `uv sync` | Install from uv.lock |
+| `uv pip install package` | Install package |
+| `uv pip install -e '.[dev]'` | Install editable with dev deps |
+| `uv run command` | Run command in environment |
+| `uv python install 3.12` | Install Python version |
+| `uv venv` | Create virtual environment |
 
-## Environment Variables
+## Configuration
 
-```ini
-[testenv]
-setenv =
-    PYTHONPATH = {toxinidir}/src
-    DATABASE_URL = sqlite:///test.db
-passenv =
-    HOME
-    CI
-    GITHUB_*
+### pyproject.toml (dev dependencies)
+```toml
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "pytest-xdist>=3.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
 ```
 
-## Dependencies
-
-```ini
-[testenv]
-# From requirements file
-deps = -r requirements-test.txt
-
-# Specific packages
-deps =
-    pytest>=8.0
-    httpx>=0.25.0
-
-# Editable install of project
-usedevelop = true
-```
-
-## Matrix Testing
-
-```ini
-[tox]
-env_list = py{310,311,312}-{django42,django50}
-
-[testenv]
-deps =
-    django42: Django>=4.2,<4.3
-    django50: Django>=5.0,<5.1
-    pytest-django
-```
-
-## CI Integration
-
-### GitHub Actions
+### Pre-commit with UV
 ```yaml
-- name: Run tox
-  run: |
-    pip install tox
-    tox -e py${{ matrix.python-version }}
-```
-
-### With tox-gh-actions
-```ini
-[gh-actions]
-python =
-    3.10: py310
-    3.11: py311
-    3.12: py312, lint, typecheck
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.0
+    hooks:
+      - id: mypy
 ```

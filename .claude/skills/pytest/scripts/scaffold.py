@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold a pytest project with tox integration."""
+"""Scaffold a pytest project with uv integration."""
 
 import argparse
 import os
@@ -21,7 +21,8 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
     "pytest-xdist>=3.0",
-    "tox>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
 ]
 
 [tool.pytest.ini_options]
@@ -47,86 +48,61 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "C", "B", "UP", "SIM", "ARG", "PT", "PL", "TRY"]
+ignore = ["PLR", "PLC0415"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
 '''
 
-TOX_INI = '''[tox]
-env_list = py310, py311, py312, lint, coverage
-isolated_build = true
-
-[testenv]
-description = Run tests with pytest
-deps =
-    pytest>=8.0
-    pytest-cov>=4.0
-commands =
-    pytest {posargs}
-
-[testenv:coverage]
-description = Run tests with coverage report
-deps =
-    pytest>=8.0
-    pytest-cov>=4.0
-commands =
-    pytest --cov=src --cov-report=term-missing --cov-report=html {posargs}
-
-[testenv:lint]
-description = Run linting checks
-skip_install = true
-deps =
-    ruff>=0.1.0
-commands =
-    ruff check src tests
-    ruff format --check src tests
-
-[testenv:format]
-description = Format code
-skip_install = true
-deps =
-    ruff>=0.1.0
-commands =
-    ruff format src tests
-    ruff check --fix src tests
-'''
-
-CONFTEST_PY = '''"""Shared pytest fixtures."""
+CONFTEST_PY = '''# Shared pytest fixtures (docstring commented out to avoid quote conflicts)
 
 import pytest
 
 
 @pytest.fixture
 def sample_data():
-    """Provide sample test data."""
+    # Provide sample test data (commented out to avoid quote conflicts)
     return {"key": "value", "count": 42}
 
 
 @pytest.fixture(scope="session")
 def session_resource():
-    """Resource shared across all tests in session."""
+    # Resource shared across all tests in session (commented out to avoid quote conflicts)
     resource = setup_resource()
     yield resource
     teardown_resource(resource)
 
 
 def setup_resource():
-    """Setup logic for session resource."""
+    # Setup logic for session resource (commented out to avoid quote conflicts)
     return {"initialized": True}
 
 
 def teardown_resource(resource):
-    """Teardown logic for session resource."""
+    # Teardown logic for session resource (commented out to avoid quote conflicts)
     pass
 '''
 
-TEST_EXAMPLE = '''"""Example test module."""
+TEST_EXAMPLE = '''# Example test module (docstring commented out to avoid quote conflicts)
 
 import pytest
 
 
 class TestExample:
-    """Example test class."""
+    # Example test class (commented out to avoid quote conflicts)
 
     def test_basic(self, sample_data):
-        """Test using fixture."""
+        # Test using fixture (commented out to avoid quote conflicts)
         assert sample_data["key"] == "value"
         assert sample_data["count"] == 42
 
@@ -139,12 +115,12 @@ class TestExample:
         ],
     )
     def test_parametrized(self, input_val, expected):
-        """Test with parametrized inputs."""
+        # Test with parametrized inputs (commented out to avoid quote conflicts)
         assert input_val * 2 == expected
 
     @pytest.mark.slow
     def test_slow_operation(self):
-        """Test marked as slow."""
+        # Test marked as slow (commented out to avoid quote conflicts)
         result = sum(range(1000))
         assert result == 499500
 '''
@@ -176,7 +152,7 @@ venv/
 
 
 def create_project(name: str, path: Path, description: str = ""):
-    """Create pytest project structure with tox."""
+    """Create pytest project structure with uv."""
     project_path = path / name
 
     # Create directories
@@ -207,7 +183,6 @@ def create_project(name: str, path: Path, description: str = ""):
     (project_path / "pyproject.toml").write_text(
         PYPROJECT_TOML.format(name=name, description=desc)
     )
-    (project_path / "tox.ini").write_text(TOX_INI)
     (project_path / "tests" / "conftest.py").write_text(CONFTEST_PY)
     (project_path / "tests" / "unit" / "test_example.py").write_text(TEST_EXAMPLE)
     (project_path / ".gitignore").write_text(GITIGNORE)
@@ -221,7 +196,6 @@ def create_project(name: str, path: Path, description: str = ""):
     print(f"\nStructure:")
     print(f"  {name}/")
     print(f"  ├── pyproject.toml")
-    print(f"  ├── tox.ini")
     print(f"  ├── .gitignore")
     print(f"  ├── src/{pkg_name}/")
     print(f"  │   ├── __init__.py")
@@ -234,13 +208,14 @@ def create_project(name: str, path: Path, description: str = ""):
     print(f"\nNext steps:")
     print(f"  cd {name}")
     print(f"  pip install -e '.[dev]'  # or: uv pip install -e '.[dev]'")
-    print(f"  tox                       # run all test environments")
-    print(f"  tox -e py312              # run specific environment")
-    print(f"  pytest                    # run tests directly")
+    print(f"  pytest                    # run tests")
+    print(f"  pytest --cov=src          # with coverage")
+    print(f"  ruff check src tests      # lint check")
+    print(f"  mypy src                  # type check")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Scaffold pytest project with tox")
+    parser = argparse.ArgumentParser(description="Scaffold pytest project with uv")
     parser.add_argument("name", help="Project name")
     parser.add_argument("--path", type=Path, default=Path.cwd(), help="Parent directory")
     parser.add_argument("--description", default="", help="Project description")

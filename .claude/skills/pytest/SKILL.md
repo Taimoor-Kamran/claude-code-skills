@@ -1,11 +1,11 @@
 ---
 name: pytest
-description: Scaffold and manage pytest projects with tox integration. Use when users want to create new test projects, add test files, configure tox environments, run tests with coverage, or follow pytest best practices. Triggers on requests like "create a pytest project", "add tests", "set up tox", "run coverage", or any pytest/tox development task.
+description: Scaffold and manage pytest projects with uv integration. Use when users want to create new test projects, add test files, configure development environments with uv, run tests with coverage, or follow pytest best practices. Triggers on requests like "create a pytest project", "add tests", "set up uv", "run coverage", or any pytest/uv development task.
 ---
 
-# Pytest with Tox
+# Pytest with UV
 
-Scaffold and manage pytest projects using tox for multi-environment testing.
+Scaffold and manage pytest projects using uv for fast package management.
 
 ## Quick Start: New Project
 
@@ -16,8 +16,7 @@ python scripts/scaffold.py my-project --path /target/directory
 Creates:
 ```
 my-project/
-├── pyproject.toml      # pytest + coverage config
-├── tox.ini             # multi-env test runner
+├── pyproject.toml      # pytest + coverage + lint config
 ├── src/my_project/     # source code (src layout)
 └── tests/
     ├── conftest.py     # shared fixtures
@@ -25,16 +24,16 @@ my-project/
     └── integration/
 ```
 
-## Tox Commands
+## UV Commands
 
 | Task | Command |
 |------|---------|
-| Run all envs | `tox` |
-| Specific Python | `tox -e py312` |
-| With coverage | `tox -e coverage` |
-| Lint check | `tox -e lint` |
-| Parallel | `tox -p auto` |
-| Pass pytest args | `tox -- -k test_name` |
+| Install dependencies | `uv pip install -e '.[dev]'` |
+| Run tests | `pytest` |
+| Run with coverage | `pytest --cov=src` |
+| Lint check | `ruff check src tests` |
+| Format code | `ruff format src tests` |
+| Type check | `mypy src` |
 
 ## Adding Tests
 
@@ -66,20 +65,20 @@ def api_client():
 ## Running Tests
 
 ```bash
-# Direct pytest
+# Basic testing
 pytest                          # all tests
 pytest tests/unit/              # specific directory
 pytest -k "test_name"           # by name pattern
 pytest -m "not slow"            # exclude markers
 pytest --cov=src                # with coverage
+pytest -n auto                  # parallel execution
 
-# Via tox
-tox                             # all environments
-tox -e py312                    # single environment
-tox -e coverage                 # coverage report
+# With uv
+uv run pytest                   # run in uv environment
+uv run pytest --cov=src         # coverage in uv environment
 ```
 
 ## References
 
 - **Patterns**: See [references/patterns.md](references/patterns.md) for fixtures, parametrize, mocking, async tests
-- **Tox Config**: See [references/tox-config.md](references/tox-config.md) for environment setup, CI integration
+- **UV Commands**: See [references/tox-config.md](references/tox-config.md) for environment setup, CI integration
