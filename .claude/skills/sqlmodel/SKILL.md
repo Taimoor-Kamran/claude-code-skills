@@ -1,99 +1,103 @@
 ---
 name: sqlmodel
-description: SQLModel integration for FastAPI projects with PostgreSQL. Use when building FastAPI applications that need database models, when converting existing SQLAlchemy/Pydantic projects to SQLModel, when creating CRUD endpoints with database operations, or when setting up async PostgreSQL connections. Triggers on requests involving database models, ORM setup, Pydantic schemas that map to database tables, or unified model definitions.
+description: SQLModel Python ORM development assistance using official Context7 documentation. Use when building database models, sessions, CRUD operations, relationships, or FastAPI + SQLModel integration. Triggers on SQLModel model definition, query patterns, session management, table relationships, migration with Alembic, or any SQLModel-related development task.
 ---
 
-# SQLModel for FastAPI + PostgreSQL
+# SQLModel
 
-SQLModel combines SQLAlchemy and Pydantic into unified models that serve as both database tables and API schemas.
+SQLModel is a Python library for interacting with SQL databases using Python objects. It combines SQLAlchemy and Pydantic, making it ideal for FastAPI applications.
 
-## Quick Start
+## Fetch Official Docs
 
-### Add dependencies
+Always fetch official SQLModel docs via Context7 before writing code:
 
 ```bash
-uv add sqlmodel asyncpg greenlet
+# Fetch by topic (recommended)
+bash scripts/fetch-sqlmodel-docs.sh --topic <topic>
+
+# Examples:
+bash scripts/fetch-sqlmodel-docs.sh --topic "create models"
+bash scripts/fetch-sqlmodel-docs.sh --topic "session query"
+bash scripts/fetch-sqlmodel-docs.sh --topic "relationships"
+bash scripts/fetch-sqlmodel-docs.sh --topic "FastAPI integration"
+bash scripts/fetch-sqlmodel-docs.sh --topic "select where"
 ```
 
-### Define unified models
-
-```python
-from sqlmodel import SQLModel, Field
-
-class TodoBase(SQLModel):
-    title: str = Field(min_length=1, max_length=255, index=True)
-    completed: bool = False
-
-class Todo(TodoBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-
-class TodoCreate(TodoBase):
-    pass
-
-class TodoUpdate(SQLModel):
-    title: str | None = None
-    completed: bool | None = None
-```
-
-Key: `table=True` makes it a database table. Without it, it's just a Pydantic schema.
+SQLModel Context7 ID: `/fastapi/sqlmodel`
 
 ## Workflow
 
-### Adding SQLModel to existing FastAPI project
+1. **Fetch docs** for the relevant topic (`bash scripts/fetch-sqlmodel-docs.sh --topic <topic>`)
+2. **Implement** using fetched patterns
+3. **For complex topics**, see reference files below
 
-1. Add dependencies: `uv add sqlmodel asyncpg greenlet`
-2. Replace SQLAlchemy Base with SQLModel (see [database.md](references/database.md))
-3. Convert models to SQLModel pattern (see [models.md](references/models.md))
-4. Update imports from `sqlalchemy` to `sqlmodel` where applicable
-5. Consolidate duplicate Pydantic schemas into SQLModel inheritance
+## Core Patterns
 
-### Creating new models
-
-1. Define base model with shared fields (no `table=True`)
-2. Create table model inheriting base with `table=True` and `id` field
-3. Create schemas: `Create` (inherits base), `Update` (all optional), `Public` (with id)
-
-See [models.md](references/models.md) for field configuration and patterns.
-
-### Database operations
-
-Use async session with `session.exec()` for queries:
+### Model Definition
 
 ```python
-from sqlmodel import select
-
-async def get_todos(session: AsyncSession) -> list[Todo]:
-    result = await session.exec(select(Todo))
-    return result.all()
-```
-
-See [crud.md](references/crud.md) for full CRUD patterns and repository pattern.
-
-### Relationships
-
-```python
-class Team(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    heroes: list["Hero"] = Relationship(back_populates="team")
+from sqlmodel import SQLModel, Field
+from typing import Optional
 
 class Hero(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    team_id: int | None = Field(default=None, foreign_key="team.id")
-    team: Team | None = Relationship(back_populates="heroes")
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    secret_name: str
+    age: Optional[int] = None
 ```
 
-See [relationships.md](references/relationships.md) for one-to-many, many-to-many, and async loading.
+- `table=True` → database table model
+- No `table=True` → Pydantic-only data model (for request/response schemas)
 
-### Migrations
+### Session & Engine
 
-Use Alembic with async configuration. See [migrations.md](references/migrations.md) for setup.
+```python
+from sqlmodel import create_engine, Session, SQLModel
 
-## References
+engine = create_engine("sqlite:///database.db")
 
-| File | Use when |
-|------|----------|
-| [models.md](references/models.md) | Defining models, fields, timestamps, enums |
-| [database.md](references/database.md) | Setting up async PostgreSQL connection |
-| [crud.md](references/crud.md) | Implementing create/read/update/delete operations |
-| [relationships.md](references/relationships.md) | Adding foreign keys and relationships |
-| [migrations.md](references/migrations.md) | Setting up Alembic for schema migrations |
+def create_db():
+    SQLModel.metadata.create_all(engine)
+
+# Use session as context manager
+with Session(engine) as session:
+    session.add(hero)
+    session.commit()
+    session.refresh(hero)
+```
+
+### CRUD Quick Reference
+
+```python
+from sqlmodel import Session, select
+
+# Create
+hero = Hero(name="Spider-Boy", secret_name="Pedro")
+session.add(hero)
+session.commit()
+
+# Read one
+hero = session.get(Hero, hero_id)
+
+# Read many
+statement = select(Hero).where(Hero.name == "Spider-Boy")
+heroes = session.exec(statement).all()
+
+# Update
+hero.age = 16
+session.add(hero)
+session.commit()
+
+# Delete
+session.delete(hero)
+session.commit()
+```
+
+## Reference Files
+
+Load these only when needed:
+
+- **[references/models.md](references/models.md)** - Model fields, validators, optional vs required, inheritance, table vs data models
+- **[references/relationships.md](references/relationships.md)** - One-to-many, many-to-many, back_populates, Relationship()
+- **[references/crud.md](references/crud.md)** - Full CRUD patterns, filtering, ordering, pagination, exec() vs all()
+- **[references/fastapi-integration.md](references/fastapi-integration.md)** - Lifespan events, session dependency, router patterns, request/response models
